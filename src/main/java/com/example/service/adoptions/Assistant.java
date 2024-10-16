@@ -58,5 +58,3 @@ class Assistant {
     }
 }
 
-record DogAdoptionSuggestion(int id, String name, String description) {
-}

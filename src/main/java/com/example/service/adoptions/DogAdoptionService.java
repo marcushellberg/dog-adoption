@@ -1,10 +1,10 @@
 package com.example.service.adoptions;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,10 +23,10 @@ public class DogAdoptionService {
         this.publisher = publisher;
     }
 
-    void adopt(int dogId, String ownerName) {
+    public void adopt(int dogId, String ownerName) {
         this.repository.findById(dogId)
             .ifPresent(dog -> {
-                var newDog = this.repository.save(new Dog(dog.id(), dog.name(), dog.description(), ownerName));
+                var newDog = this.repository.save(new Dog(dog.id(), dog.name(), dog.description(), ownerName, dog.image()));
                 System.out.println("adopted [" + newDog + "]");
                 this.publisher.publishEvent(new DogAdoptionEvent(newDog.id()));
             });
@@ -36,16 +36,20 @@ public class DogAdoptionService {
         return this.repository.findAll();
     }
 
-    DogAdoptionSuggestion suggest(String query) {
-        return this.singularity
-            .prompt()
-            .user(query)
+    public List<DogAdoptionSuggestion> suggest(String query) {
+        return this.singularity.prompt()
+            .user("Do you have dogs that are " + query + "?")
             .call()
-            .entity(DogAdoptionSuggestion.class);
+            .entity(DogAdoptionSuggestionResponse.class)
+            .suggestions();
     }
 }
 
+record DogAdoptionSuggestionResponse(List<DogAdoptionSuggestion> suggestions) {
+
+}
 
 interface DogRepository extends ListCrudRepository<Dog, Integer> {
+
 }
 
